@@ -6,8 +6,41 @@ import constants from "./constants";
 export default class MainComponent extends Component{
     constructor(props) {
         super(props);
-        this.loadData();
-        this.state={wines:[]}
+        this.state={wines:[],red:false,white:false,rose:false}
+        this.loadData(false,false,false);
+    }
+
+    updateRedWine= event => {
+        if(this.state.red) {
+            this.setState({red: false});
+            this.loadData(false,this.state.white,this.state.rose);
+        }
+        else{
+            this.setState({red:true});
+            this.loadData(true,this.state.white,this.state.rose);
+        }
+    }
+
+    updateWhiteWIne= event => {
+        if(this.state.white) {
+            this.setState({white: false});
+            this.loadData(this.state.red,false,this.state.rose);
+        }
+        else{
+            this.setState({white:true});
+            this.loadData(this.state.red,true,this.state.rose);
+        }
+    }
+
+    updateRoseWIne= event => {
+        if(this.state.rose) {
+            this.setState({rose: false});
+            this.loadData(this.state.red,this.state.white,false);
+        }
+        else{
+            this.setState({rose:true});
+            this.loadData(this.state.red,this.state.white,true);
+        }
     }
 
     render() {
@@ -22,6 +55,12 @@ export default class MainComponent extends Component{
                         {this.drawWines()}
                     </div>
                     <div className="filters">
+                        <input type="checkbox" onChange={this.updateRedWine}/>
+                        <p>Vino Rosso</p>
+                        <input type="checkbox" onChange={this.updateWhiteWIne}/>
+                        <p>Vino Bianco</p>
+                        <input type="checkbox" onChange={this.updateRoseWIne}/>
+                        <p>Vino Rosè</p>
                     </div>
                 </div>
                 <div className="contentRow">
@@ -41,7 +80,7 @@ export default class MainComponent extends Component{
     drawWines(){
         if(this.state.wines.length>0)
             return this.state.wines.map((wine)=>{
-                let wineRow="🍷 "+wine.name+" "+wine.tag+" +   ";
+                let wineRow="🍷 "+wine.name;
                 if(wine.type.includes("http://www.semanticweb.org/ProgettoModSem2021/wine-ontology#VinoRosso")){
                     wineRow+=" 🟥";
                 }
@@ -61,23 +100,59 @@ export default class MainComponent extends Component{
             return <p className="error">Ci dispiace non ci sono vini per i criteri selezionati</p>
     }
 
-    loadData(){ //Function used to load all wines at the start of the application
+    loadData(red,white,rose){ //Function used to load all wines at the start of the application
         //Query used to get all the wines
+        let query;
+        if(white===false && red===false && rose===false){
+            query=`PREFIX : <http://www.semanticweb.org/ProgettoModSem2021/wine-ontology#>
+                    SELECT *
+                    WHERE { 
+                        ?vino rdf:type ?tipoVino;
+                        :nomeVino ?nomeVino;
+                        :gradazioneAlcolica ?GradazioneAlcolica;
+                        :haColore ?colore.
+                        ?tipoVino rdfs:subClassOf :Vino.
+                    }`;
+        }else{
+            let first=true;
+            query=`PREFIX : <http://www.semanticweb.org/ProgettoModSem2021/wine-ontology#>
+                    SELECT *
+                    WHERE { 
+                        ?vino rdf:type ?tipoVino;
+                        :nomeVino ?nomeVino;
+                        :gradazioneAlcolica ?GradazioneAlcolica;
+                        :haColore ?colore.
+                    FILTER(?tipoVino in (`
+            if(white){
+                if(first){
+                    query+=`:VinoBianco`;
+                    first=false;
+                }else
+                    query+=`, :VinoBianco`
+            }
+            if(red){
+                if(first){
+                    query+=`:VinoRosso`;
+                    first=false;
+                }else
+                    query+=`, :VinoRosso`
+            }
+            if(rose){
+                if(first){
+                    query+=`:VinoRosè`;
+                    first=false;
+                }else
+                    query+=`, :VinoRosè`
+            }
+            query+=`))}`;
+        }
+        console.log(query)
         $.ajax({
             url: constants.serverIp,
             type: "get",
             dataType: "text",
             data: {
-            query:`PREFIX : <http://www.semanticweb.org/ProgettoModSem2021/wine-ontology#> 
-                    SELECT ?vino ?nomeVino ?GradazioneAlcolica ?Riconoscimenti ?tipoVino ?colore
-                        WHERE { 
-                            ?vino rdf:type ?tipoVino;
-                            :nomeVino ?nomeVino;
-                            :gradazioneAlcolica ?GradazioneAlcolica;
-                            :riconoscimenti ?Riconoscimenti;
-                            :colore ?colore.
-                            ?tipoVino rdfs:subClassOf :Vino
-                        }`
+            query:query
         },
             'success' : (data)=> {
                 //Parsing the result inside a class
@@ -93,17 +168,14 @@ export default class MainComponent extends Component{
                             wines_result.push(actual_wine);
                         actual_wine={}
                         actual_wine.id=wines[i][0];
-                        actual_wine.name=wines[i][1];
-                        actual_wine.alchol=wines[i][2];
-                        actual_wine.tag=wines[i][3];
-                        actual_wine.type=[wines[i][4]];
-                        actual_wine.color=wines[i][5];
+                        actual_wine.name=""+wines[i][2];
+                        actual_wine.alchol=wines[i][3];
+                        actual_wine.type=[wines[i][1]];
                     }else{
-                        actual_wine.type.push(wines[i][4])
+                        actual_wine.type.push(wines[i][1])
                     }
                 }
                 wines_result.shift();
-                console.log(wines_result)
                 this.setState({wines:wines_result}) //Set the application state to all the wines
             },
             'error' : function(request,error)

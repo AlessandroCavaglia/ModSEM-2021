@@ -62,3 +62,22 @@ code {
 .wineRow:hover{
   cursor: pointer;
 }
+
+.filterRow{
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+}
+.filterRowNew{
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  margin-top: 10px;
+}
+.filterCheck{
+  margin-right: 10px;
+}

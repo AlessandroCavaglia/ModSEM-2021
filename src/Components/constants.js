@@ -1,5 +1,5 @@
 export default class Constants{
-    static serverIp="http://DESKTOP-CFCG2C8:7200/repositories/WineOntology";
+    static serverIp="http://localhost:7200/repositories/WineOntology"; //Server url
 }
 
 //File used to contain project Constants
